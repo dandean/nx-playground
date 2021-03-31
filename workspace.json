@@ -1,10 +1,53 @@
 {
-  
-  
   "version": 2,
-  
-  "projects": {},
-  "cli": {
-    "defaultCollection": "@nrwl/workspace"
+  "cli": { "defaultCollection": "@nrwl/node" },
+  "defaultProject": "fooo",
+  "projects": {
+    "fooo": {
+      "root": "apps/fooo",
+      "sourceRoot": "apps/fooo/src",
+      "projectType": "application",
+      "targets": {
+        "build": {
+          "executor": "@nrwl/node:build",
+          "outputs": ["{options.outputPath}"],
+          "options": {
+            "outputPath": "dist/apps/fooo",
+            "main": "apps/fooo/src/main.ts",
+            "tsConfig": "apps/fooo/tsconfig.app.json",
+            "assets": ["apps/fooo/src/assets"]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "extractLicenses": true,
+              "inspect": false,
+              "fileReplacements": [
+                {
+                  "replace": "apps/fooo/src/environments/environment.ts",
+                  "with": "apps/fooo/src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        },
+        "serve": {
+          "executor": "@nrwl/node:execute",
+          "options": { "buildTarget": "fooo:build" }
+        },
+        "lint": {
+          "executor": "@nrwl/linter:eslint",
+          "options": { "lintFilePatterns": ["apps/fooo/**/*.ts"] }
+        },
+        "test": {
+          "executor": "@nrwl/jest:jest",
+          "outputs": ["coverage/apps/fooo"],
+          "options": {
+            "jestConfig": "apps/fooo/jest.config.js",
+            "passWithNoTests": true
+          }
+        }
+      }
+    }
   }
 }
