@@ -32,6 +32,8 @@ jobs:
       # This section will be skipped with tag builds.
       - if: ${{ steps.is-tag-build.outputs.value == 'false' }}
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
 
       - if: ${{ steps.is-tag-build.outputs.value == 'false' }}
         uses: actions/setup-node@v2
