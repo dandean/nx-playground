@@ -1,0 +1,64 @@
+name: GraphQL Release Pipeline
+
+on:
+  push:
+    # Release GraphQL whenever a release tag is published OR when pull requests
+    # are merged into main.
+    tags:
+      - release-v[0-9]+
+    branches:
+      - main
+
+jobs:
+  gate:
+    # The Workflow Gate job gates execution of the entire pipeline. This inspects
+    # run context to detect a tag event or merge to main. When it's a tag release
+    # we're good to go because we're already filtering on release tags in the
+    # "on push" event config. For "merge" we filter on pushed to the "main" then
+    # run "nx affected:apps" to detect if GraphQL was affected by the push.
+    name: Workflow Gate
+    runs-on: ubuntu-latest
+    outputs:
+      # Test, Lint, Format all "need" gate, and run conditionally on this output.
+      # If this is "false" then the workflow stops.
+      should-run: ${{ steps.should-run.outputs.value }}
+    steps:
+      - name: Is Tag Build?
+        id: is-tag-build
+        shell: bash
+        run: echo "::set-output name=value::${{ startsWith(github.ref, 'refs/tags/release') }}"
+
+      # <detect app in nx affected:apps>
+      # This section will be skipped with tag builds.
+      - if: ${{ steps.is-tag-build.outputs.value == 'false' }}
+        uses: actions/checkout@v2
+
+      - if: ${{ steps.is-tag-build.outputs.value == 'false' }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: '12'
+
+      - if: ${{ steps.is-tag-build.outputs.value == 'false' }}
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - if: ${{ steps.is-tag-build.outputs.value == 'false' }}
+        name: Nx Affected
+        id: nx-affected
+        shell: bash
+        run: |
+          npm ci --ignore-scripts --prefer-offline --no-audit --no-optional
+          NX_AFFECTED=$(npx nx affected:apps --plain --base=${{ github.event.before }})
+          echo "::set-output name=value::$NX_AFFECTED"
+      # </detect graphql in nx affected:apps>
+
+      - name: Set Output
+        id: should-run
+        shell: bash
+        # Now we look at is-tag-build and nx-affected and save the output so
+        # that dependent jobs can conditionally run:
+        run: echo "::set-output name=value::${{ steps.is-tag-build.outputs.value == 'true' || contains(steps.nx-affected.outputs.value, 'my-app') }}"
