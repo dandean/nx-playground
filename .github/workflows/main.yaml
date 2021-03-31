@@ -1,4 +1,4 @@
-name: GraphQL Release Pipeline
+name: Release Pipeline
 
 on:
   push:
@@ -51,6 +51,7 @@ jobs:
         id: nx-affected
         shell: bash
         run: |
+          git fetch origin main
           npm ci --ignore-scripts --prefer-offline --no-audit --no-optional
           NX_AFFECTED=$(npx nx affected:apps --plain --base=${{ github.event.before }})
           echo "::set-output name=value::$NX_AFFECTED"
