@@ -53,7 +53,7 @@ jobs:
         run: |
           git fetch origin main
           npm ci --ignore-scripts --prefer-offline --no-audit --no-optional
-          NX_AFFECTED=$(npx nx affected:apps --plain --base=${{ github.event.before }})
+          NX_AFFECTED=$(npx nx affected:apps --plain --base=${{ github.event.before }} --head=HEAD)
           echo "::set-output name=value::$NX_AFFECTED"
       # </detect graphql in nx affected:apps>
 
